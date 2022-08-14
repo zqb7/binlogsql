@@ -35,7 +35,7 @@ func NewBinLog(conf *RootFlag) (*BinLog, error) {
 		size := int(v[1].AsInt64())
 		binlogNameSizeM[name] = size
 	}
-	if _, ok := binlogNameSizeM[conf.StartFile]; !ok {
+	if _, ok := binlogNameSizeM[conf.StartFile]; !ok && conf.StartFile != "" {
 		return nil, fmt.Errorf("parameter error: start_file %s not in mysql server", conf.StartFile)
 	}
 	result, err = conn.Execute("SELECT @@server_id")
@@ -73,7 +73,11 @@ func (b *BinLog) Run() error {
 		RawModeEnabled: false,
 	}
 	syncer := replication.NewBinlogSyncer(cfg)
-	streamer, _ := syncer.StartSync(mysql.Position{Name: b.conf.StartFile, Pos: b.conf.StartPosition})
+	var pos = mysql.Position{Name: b.eofFile, Pos: uint32(b.eofPos)}
+	if b.conf.StartFile != "" {
+		pos.Name, pos.Pos = b.conf.StartFile, b.conf.StartPosition
+	}
+	streamer, _ := syncer.StartSync(pos)
 
 	var (
 		ev  *replication.BinlogEvent
