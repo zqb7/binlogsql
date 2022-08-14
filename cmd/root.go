@@ -18,8 +18,8 @@ type RootFlag struct {
 
 	StartFile     string
 	StartPosition uint32
-	StopFile      string
-	StopPosition  int
+	EndFile       string
+	EndPosition   int
 
 	_StartDateTimeStr string
 	_StopDateTimeStr  string
@@ -76,10 +76,10 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&rootFlag.DbName, "database", "d", "", "解析指定的数据库")
 	rootCmd.PersistentFlags().StringSliceVarP(&rootFlag.OnlyTables, "tables", "t", []string{}, "仅输出指定的表语句 ex:-t table1,table2")
 
-	rootCmd.PersistentFlags().StringVar(&rootFlag.StartFile, "start-file", "", "默认为最新的文件 ex: --start-file mysql-bin.000003")
+	rootCmd.PersistentFlags().StringVar(&rootFlag.StartFile, "start-file", "", "默认为最新的文件 ex: --start-file mysql-bin.000002")
 	rootCmd.PersistentFlags().Uint32Var(&rootFlag.StartPosition, "start-pos", 0, "默认为最新的位置 ex: --start-pos 154")
-	rootCmd.PersistentFlags().StringVar(&rootFlag.StopFile, "stop-file", "", "")
-	rootCmd.PersistentFlags().IntVar(&rootFlag.StopPosition, "end-pos", 0, "")
+	rootCmd.PersistentFlags().StringVar(&rootFlag.EndFile, "end-file", "", "截止解析的文件 ex: --end-file mysql-bin.000003")
+	rootCmd.PersistentFlags().IntVar(&rootFlag.EndPosition, "end-pos", 0, "截止解析的位置 ex: --end-pos 154")
 	rootCmd.PersistentFlags().StringVar(&rootFlag._StartDateTimeStr, "start-datetime", "", "起始解析时间(可选) 格式:%Y-%m-%d %H:%M:%S ex: 2022-08-11 16:00:00")
 	rootCmd.PersistentFlags().StringVar(&rootFlag._StopDateTimeStr, "stop-datetime", "", "截止解析时间(可选) 格式:%Y-%m-%d %H:%M:%S ex: 2022-08-13 16:00:00")
 	rootCmd.PersistentFlags().BoolVarP(&rootFlag.Flashback, "flashback", "", false, "生成回滚语句")

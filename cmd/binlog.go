@@ -94,6 +94,9 @@ func (b *BinLog) Run() error {
 		if ev == nil && err == nil {
 			continue
 		}
+		if nextPos := syncer.GetNextPosition(); b.conf.EndFile != "" && ((nextPos.Name > b.conf.EndFile) || nextPos.Name == b.conf.EndFile && nextPos.Pos > uint32(b.conf.EndPosition)) {
+			return nil
+		}
 		if err == context.DeadlineExceeded {
 			if !b.conf.StopNever && b.conf.StopDateTime.IsZero() {
 				return nil
