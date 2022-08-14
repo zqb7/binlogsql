@@ -86,8 +86,7 @@ func (b *BinLog) Run() error {
 		} else if event, ok := ev.Event.(*replication.RowsEvent); ok {
 			if b.conf.DbName != "" && b.conf.DbName != fmt.Sprintf("%s", event.Table.Schema) {
 				continue
-			}
-			if len(b.conf.OnlyTables) != 0 {
+			} else if len(b.conf.OnlyTables) != 0 {
 				var flag bool
 				for _, tableName := range b.conf.OnlyTables {
 					if fmt.Sprintf("%s", event.Table.Table) == tableName {
@@ -97,6 +96,10 @@ func (b *BinLog) Run() error {
 				if !flag {
 					continue
 				}
+			} else if ev.Header.Timestamp < uint32(b.conf.StartDateTimestamp) {
+				continue
+			} else if b.conf.StopDateTimestamp != 0 && ev.Header.Timestamp > uint32(b.conf.StopDateTimestamp) {
+				return nil
 			}
 			sql := b.generate_sql_pattern(ev.Header.EventType, event, false)
 			if strings.HasPrefix(sql, "INSERT") {
@@ -135,11 +138,6 @@ func (b *BinLog) getClumns(e *replication.TableMapEvent) error {
 		}
 	}
 	return nil
-}
-
-func (b *BinLog) concatSqlFromBinlogEvent() []string {
-	sqls := make([]string, 0, 2)
-	return sqls
 }
 
 func (b *BinLog) generate_sql_pattern(eventType replication.EventType, e *replication.RowsEvent, noPk bool) (sql string) {
@@ -193,11 +191,7 @@ func (b *BinLog) mogrify(column, row []string, isWhere bool) string {
 				continue
 			}
 		}
-		if _, err := strconv.Atoi(v); err != nil {
-			s += fmt.Sprintf("`%s`='%s'  AND ", column[index], v)
-		} else {
-			s += fmt.Sprintf("`%s`=%s  AND ", column[index], v)
-		}
+		s += fmt.Sprintf("`%s`=%s  AND ", column[index], v)
 	}
 	s = strings.TrimRight(s, "  AND ")
 	return s

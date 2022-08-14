@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -19,15 +20,41 @@ type RootFlag struct {
 	StartPosition uint32
 	StopFile      string
 	StopPosition  int
-	StartDateTime string
-	StopDateTime  string
-	Flashback     bool
+
+	_StartDateTimeStr  string
+	_StopDateTimeStr   string
+	StartDateTimestamp int64
+	StopDateTimestamp  int64
+	Flashback          bool
+}
+
+func (rf *RootFlag) verify() error {
+	if rf._StartDateTimeStr != "" {
+		t, err := time.ParseInLocation("2006-01-02 15:04:05", rf._StartDateTimeStr, time.Local)
+		if err != nil {
+			return err
+		}
+		rf.StartDateTimestamp = t.Unix()
+	}
+
+	if rf._StopDateTimeStr != "" {
+		t, err := time.ParseInLocation("2006-01-02 15:04:05", rf._StopDateTimeStr, time.Local)
+		if err != nil {
+			return err
+		}
+		rf.StopDateTimestamp = t.Unix()
+	}
+
+	return nil
 }
 
 var rootCmd = &cobra.Command{
 	Use:   "binlogsql",
 	Short: "binlogsql",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if err := rootFlag.verify(); err != nil {
+			return err
+		}
 		binLog, err := NewBinLog(&rootFlag)
 		if err != nil {
 			return err
@@ -52,8 +79,8 @@ func init() {
 	rootCmd.PersistentFlags().Uint32Var(&rootFlag.StartPosition, "start-pos", 0, "")
 	rootCmd.PersistentFlags().StringVar(&rootFlag.StopFile, "stop-file", "", "")
 	rootCmd.PersistentFlags().IntVar(&rootFlag.StopPosition, "end-pos", 0, "")
-	rootCmd.PersistentFlags().StringVar(&rootFlag.StartDateTime, "start-datetime", "", "")
-	rootCmd.PersistentFlags().StringVar(&rootFlag.StopDateTime, "stop-datetime", "", "")
+	rootCmd.PersistentFlags().StringVar(&rootFlag._StartDateTimeStr, "start-datetime", "", "起始解析时间(可选) 格式:%Y-%m-%d %H:%M:%S 例子: 2022-08-11 16:00:00")
+	rootCmd.PersistentFlags().StringVar(&rootFlag._StopDateTimeStr, "stop-datetime", "", "截止解析时间(可选) 格式:%Y-%m-%d %H:%M:%S 例子: 2022-08-13 16:00:00")
 	rootCmd.PersistentFlags().BoolVarP(&rootFlag.Flashback, "flashback", "", false, "")
 }
 
