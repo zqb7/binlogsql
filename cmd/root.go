@@ -21,11 +21,12 @@ type RootFlag struct {
 	StopFile      string
 	StopPosition  int
 
-	_StartDateTimeStr  string
-	_StopDateTimeStr   string
-	StartDateTimestamp int64
-	StopDateTimestamp  int64
-	Flashback          bool
+	_StartDateTimeStr string
+	_StopDateTimeStr  string
+	StartDateTime     time.Time
+	StopDateTime      time.Time
+	Flashback         bool
+	StopNever         bool
 }
 
 func (rf *RootFlag) verify() error {
@@ -34,7 +35,7 @@ func (rf *RootFlag) verify() error {
 		if err != nil {
 			return err
 		}
-		rf.StartDateTimestamp = t.Unix()
+		rf.StartDateTime = t
 	}
 
 	if rf._StopDateTimeStr != "" {
@@ -42,7 +43,7 @@ func (rf *RootFlag) verify() error {
 		if err != nil {
 			return err
 		}
-		rf.StopDateTimestamp = t.Unix()
+		rf.StopDateTime = t
 	}
 
 	return nil
@@ -82,6 +83,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&rootFlag._StartDateTimeStr, "start-datetime", "", "起始解析时间(可选) 格式:%Y-%m-%d %H:%M:%S 例子: 2022-08-11 16:00:00")
 	rootCmd.PersistentFlags().StringVar(&rootFlag._StopDateTimeStr, "stop-datetime", "", "截止解析时间(可选) 格式:%Y-%m-%d %H:%M:%S 例子: 2022-08-13 16:00:00")
 	rootCmd.PersistentFlags().BoolVarP(&rootFlag.Flashback, "flashback", "", false, "")
+	rootCmd.PersistentFlags().BoolVarP(&rootFlag.StopNever, "stop-never", "", false, "是否一直保持解析")
 }
 
 func Execute() {

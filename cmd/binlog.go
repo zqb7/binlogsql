@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/go-mysql-org/go-mysql/client"
@@ -73,9 +74,32 @@ func (b *BinLog) Run() error {
 	}
 	syncer := replication.NewBinlogSyncer(cfg)
 	streamer, _ := syncer.StartSync(mysql.Position{Name: b.conf.StartFile, Pos: b.conf.StartPosition})
+
+	var (
+		ev  *replication.BinlogEvent
+		err error
+	)
 	for {
-		ev, err := streamer.GetEvent(context.Background())
-		if err != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+		if !b.conf.StartDateTime.IsZero() {
+			ev, err = streamer.GetEventWithStartTime(ctx, b.conf.StartDateTime)
+		} else {
+			ev, err = streamer.GetEvent(ctx)
+		}
+		cancel()
+		if ev == nil && err == nil {
+			continue
+		}
+		if err == context.DeadlineExceeded {
+			if !b.conf.StopNever && b.conf.StopDateTime.IsZero() {
+				return nil
+			}
+			if !b.conf.StopDateTime.IsZero() && time.Now().Unix() > b.conf.StopDateTime.Unix() { //当前时间大于过滤的截止时间时,return
+				return nil
+			}
+			continue
+
+		} else if err != nil {
 			return err
 		}
 		if event, ok := ev.Event.(*replication.TableMapEvent); ok {
@@ -96,10 +120,6 @@ func (b *BinLog) Run() error {
 				if !flag {
 					continue
 				}
-			} else if ev.Header.Timestamp < uint32(b.conf.StartDateTimestamp) {
-				continue
-			} else if b.conf.StopDateTimestamp != 0 && ev.Header.Timestamp > uint32(b.conf.StopDateTimestamp) {
-				return nil
 			}
 			sql := b.generate_sql_pattern(ev.Header.EventType, event, false)
 			if strings.HasPrefix(sql, "INSERT") {
