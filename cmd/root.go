@@ -20,6 +20,7 @@ type RootFlag struct {
 	StopPosition  int
 	StartDateTime string
 	StopDateTime  string
+	Flashback     bool
 }
 
 var rootCmd = &cobra.Command{
@@ -30,8 +31,8 @@ var rootCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		binLog.Run()
-		return nil
+
+		return binLog.Run()
 	},
 }
 
@@ -51,6 +52,7 @@ func init() {
 	rootCmd.PersistentFlags().IntVar(&rootFlag.StopPosition, "end-pos", 0, "")
 	rootCmd.PersistentFlags().StringVar(&rootFlag.StartDateTime, "start-datetime", "", "")
 	rootCmd.PersistentFlags().StringVar(&rootFlag.StopDateTime, "stop-datetime", "", "")
+	rootCmd.PersistentFlags().BoolVarP(&rootFlag.Flashback, "flashback", "", false, "")
 }
 
 func Execute() {
