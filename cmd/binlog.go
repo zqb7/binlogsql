@@ -3,10 +3,10 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/go-mysql-org/go-mysql/client"
 	"github.com/go-mysql-org/go-mysql/mysql"
 	"github.com/go-mysql-org/go-mysql/replication"
@@ -78,16 +78,35 @@ func (b *BinLog) Run() error {
 		if err != nil {
 			return err
 		}
-		if event, ok := ev.Event.(*replication.QueryEvent); ok {
-			if string(event.Query) == "BEGIN" {
-			}
-			ev.Dump(os.Stdout)
-		} else if event, ok := ev.Event.(*replication.RowsEvent); ok {
-			fmt.Println(b.generate_sql_pattern(ev.Header.EventType, event, false))
-		} else if event, ok := ev.Event.(*replication.TableMapEvent); ok {
+		if event, ok := ev.Event.(*replication.TableMapEvent); ok {
 			err = b.getClumns(event)
 			if err != nil {
 				return err
+			}
+		} else if event, ok := ev.Event.(*replication.RowsEvent); ok {
+			if b.conf.DbName != "" && b.conf.DbName != fmt.Sprintf("%s", event.Table.Schema) {
+				continue
+			}
+			if len(b.conf.OnlyTables) != 0 {
+				var flag bool
+				for _, tableName := range b.conf.OnlyTables {
+					if fmt.Sprintf("%s", event.Table.Table) == tableName {
+						flag = true
+					}
+				}
+				if !flag {
+					continue
+				}
+			}
+			sql := b.generate_sql_pattern(ev.Header.EventType, event, false)
+			if strings.HasPrefix(sql, "INSERT") {
+				fmt.Fprintln(color.Output, color.GreenString(sql))
+			} else if strings.HasPrefix(sql, "UPDATE") {
+				fmt.Fprintln(color.Output, color.BlueString(sql))
+			} else if strings.HasPrefix(sql, "DELETE") {
+				fmt.Fprintln(color.Output, color.RedString(sql))
+			} else {
+				fmt.Fprintln(color.Output, b.generate_sql_pattern(ev.Header.EventType, event, false))
 			}
 		}
 	}
@@ -139,7 +158,7 @@ func (b *BinLog) generate_sql_pattern(eventType replication.EventType, e *replic
 	}
 	column := b.column[:len(rows[0])]
 	columnSql := "`" + strings.Join(column, "`,`") + "`"
-	if rootFlag.Flashback {
+	if b.conf.Flashback {
 		switch eventType {
 		case replication.WRITE_ROWS_EVENTv2:
 			sql = fmt.Sprintf("DELETE FROM `%s`.`%s` WHERE %s LIMIT 1", e.Table.Schema, e.Table.Table, b.mogrify(column, rows[0], true))

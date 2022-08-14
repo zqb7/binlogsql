@@ -8,11 +8,12 @@ import (
 )
 
 type RootFlag struct {
-	Host     string
-	Port     uint16
-	User     string
-	Password string
-	DbName   string
+	Host       string
+	Port       uint16
+	User       string
+	Password   string
+	DbName     string
+	OnlyTables []string
 
 	StartFile     string
 	StartPosition uint32
@@ -44,7 +45,8 @@ func init() {
 	rootCmd.PersistentFlags().Uint16VarP(&rootFlag.Port, "port", "P", 3306, "")
 	rootCmd.PersistentFlags().StringVarP(&rootFlag.User, "user", "u", "", "")
 	rootCmd.PersistentFlags().StringVarP(&rootFlag.Password, "password", "p", "", "")
-	rootCmd.PersistentFlags().StringVarP(&rootFlag.DbName, "dababase", "d", "", "")
+	rootCmd.PersistentFlags().StringVarP(&rootFlag.DbName, "database", "d", "", "")
+	rootCmd.PersistentFlags().StringSliceVarP(&rootFlag.OnlyTables, "tables", "t", []string{}, "仅输出指定的表语句 ex:-t table1,table2")
 
 	rootCmd.PersistentFlags().StringVar(&rootFlag.StartFile, "start-file", "", "")
 	rootCmd.PersistentFlags().Uint32Var(&rootFlag.StartPosition, "start-pos", 0, "")
