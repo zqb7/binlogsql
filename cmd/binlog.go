@@ -129,15 +129,7 @@ func (b *BinLog) Run() error {
 				}
 			}
 			sql := b.generate_sql_pattern(ev.Header.EventType, event, false)
-			if strings.HasPrefix(sql, "INSERT") {
-				fmt.Fprintln(color.Output, color.GreenString(sql))
-			} else if strings.HasPrefix(sql, "UPDATE") {
-				fmt.Fprintln(color.Output, color.BlueString(sql))
-			} else if strings.HasPrefix(sql, "DELETE") {
-				fmt.Fprintln(color.Output, color.RedString(sql))
-			} else {
-				fmt.Fprintln(color.Output, b.generate_sql_pattern(ev.Header.EventType, event, false))
-			}
+			b.FPrintSql(ev.Header.Timestamp, sql)
 		}
 	}
 }
@@ -222,4 +214,19 @@ func (b *BinLog) mogrify(column, row []string, isWhere bool) string {
 	}
 	s = strings.TrimRight(s, "  AND ")
 	return s
+}
+
+func (b *BinLog) FPrintSql(timestamp uint32, sql string) {
+	t := time.Unix(int64(timestamp), 0)
+	tStr := t.Local().Format(time.RFC3339)
+	pre := color.CyanString("事件时间: "+tStr) + " | "
+	if strings.HasPrefix(sql, "INSERT") {
+		fmt.Fprintln(color.Output, pre, color.GreenString(sql))
+	} else if strings.HasPrefix(sql, "UPDATE") {
+		fmt.Fprintln(color.Output, pre, color.BlueString(sql))
+	} else if strings.HasPrefix(sql, "DELETE") {
+		fmt.Fprintln(color.Output, pre, color.RedString(sql))
+	} else {
+		fmt.Fprintln(color.Output, pre, sql)
+	}
 }
