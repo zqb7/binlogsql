@@ -180,7 +180,7 @@ func (b *BinLog) generate_sql_pattern(eventType replication.EventType, e *replic
 		case replication.WRITE_ROWS_EVENTv2:
 			sql = fmt.Sprintf("DELETE FROM `%s`.`%s` WHERE %s LIMIT 1", e.Table.Schema, e.Table.Table, b.mogrify(column, rows[0], true))
 		case replication.DELETE_ROWS_EVENTv2:
-			sql = fmt.Sprintf("INSERT INFO `%s`.`%s`(%s) VALUES (%s)", e.Table.Schema, e.Table.Table, columnSql, strings.Join(rows[0], ","))
+			sql = fmt.Sprintf("INSERT INTO `%s`.`%s`(%s) VALUES (%s)", e.Table.Schema, e.Table.Table, columnSql, strings.Join(rows[0], ","))
 		case replication.UPDATE_ROWS_EVENTv2:
 			sql = fmt.Sprintf("UPDATE `%s`.`%s` SET %s WHERE %s LIMIT 1", e.Table.Schema, e.Table.Table, b.mogrify(column, rows[0], false), b.mogrify(column, rows[1], true))
 		}
@@ -190,7 +190,7 @@ func (b *BinLog) generate_sql_pattern(eventType replication.EventType, e *replic
 			if noPk {
 
 			}
-			sql = fmt.Sprintf("INSERT INFO `%s`.`%s`(%s) VALUES (%s)", e.Table.Schema, e.Table.Table, columnSql, strings.Join(rows[0], ","))
+			sql = fmt.Sprintf("INSERT INTO `%s`.`%s`(%s) VALUES (%s)", e.Table.Schema, e.Table.Table, columnSql, strings.Join(rows[0], ","))
 		case replication.DELETE_ROWS_EVENTv2:
 			sql = fmt.Sprintf("DELETE FROM `%s`.`%s` WHERE %s LIMIT 1", e.Table.Schema, e.Table.Table, b.mogrify(column, rows[0], true))
 		case replication.UPDATE_ROWS_EVENTv2:
