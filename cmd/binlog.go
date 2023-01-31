@@ -58,8 +58,9 @@ type BinLog struct {
 	eofPos   int
 	serverId uint32
 
-	column   []string
-	columnPk map[string]struct{}
+	column     []string
+	columnPk   map[string]struct{}
+	columnType map[string]string
 }
 
 func (b *BinLog) Run() error {
@@ -149,12 +150,14 @@ func (b *BinLog) getClumns(e *replication.TableMapEvent) error {
 	}
 	b.column = make([]string, 0)
 	b.columnPk = make(map[string]struct{})
+	b.columnType = make(map[string]string)
 	for _, v := range result.Values {
 		fieldName := fmt.Sprintf("%s", v[0].AsString())
 		b.column = append(b.column, fieldName)
 		if fmt.Sprintf("%s", v[5].AsString()) == "PRI" {
 			b.columnPk[fieldName] = struct{}{}
 		}
+		b.columnType[fieldName] = fmt.Sprintf("%s", v[4].AsString())
 	}
 	return nil
 }
@@ -163,8 +166,14 @@ func (b *BinLog) generate_sql_pattern(eventType replication.EventType, e *replic
 	rows := make([][]string, 0)
 	for _, row := range e.Rows {
 		tmp := make([]string, 0)
-		for _, v := range row {
-			t := fmt.Sprintf("%v", v)
+		for index, v := range row {
+			var t string
+			switch b.columnType[b.column[index]] {
+			case "text":
+				t = fmt.Sprintf("%s", v)
+			default:
+				t = fmt.Sprintf("%v", v)
+			}
 			if _, err := strconv.Atoi(t); err != nil {
 				tmp = append(tmp, "'"+t+"'")
 			} else {
