@@ -171,6 +171,9 @@ func (b *BinLog) generate_sql_pattern(eventType replication.EventType, e *replic
 			switch b.columnType[b.column[index]] {
 			case "text":
 				t = fmt.Sprintf("%s", v)
+			case "mediumblob":
+				tmp = append(tmp, fmt.Sprintf("0x%X", v))
+				continue
 			default:
 				t = fmt.Sprintf("%v", v)
 			}
