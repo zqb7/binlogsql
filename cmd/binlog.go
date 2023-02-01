@@ -3,6 +3,8 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"io"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -61,6 +63,8 @@ type BinLog struct {
 	column     []string
 	columnPk   map[string]struct{}
 	columnType map[string]string
+
+	writerFile io.Writer
 }
 
 func (b *BinLog) Run() error {
@@ -78,6 +82,21 @@ func (b *BinLog) Run() error {
 	if b.conf.StartFile != "" {
 		pos.Name, pos.Pos = b.conf.StartFile, b.conf.StartPosition
 	}
+
+	if b.conf.SaveFile {
+		var ext = ""
+		if b.conf.Flashback {
+			ext = "_flashback"
+		}
+		var filename = fmt.Sprintf("binlogsql_%s%s.sql", time.Now().Format("20060102150405"), ext)
+		f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, os.ModeAppend)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		b.writerFile = f
+	}
+
 	streamer, _ := syncer.StartSync(pos)
 
 	var (
@@ -229,6 +248,15 @@ func (b *BinLog) mogrify(column, row []string, isWhere bool) string {
 }
 
 func (b *BinLog) FPrintSql(timestamp uint32, sql string) {
+	if b.conf.SaveFile {
+		_, err := fmt.Fprintln(b.writerFile, sql)
+		if err != nil {
+			fmt.Fprintln(color.Output, err)
+		}
+	}
+	if b.conf.Quiet {
+		return
+	}
 	t := time.Unix(int64(timestamp), 0)
 	tStr := t.Local().Format(time.RFC3339)
 	pre := color.CyanString("事件时间: "+tStr) + " | "

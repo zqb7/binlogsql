@@ -27,6 +27,8 @@ type RootFlag struct {
 	StopDateTime      time.Time
 	Flashback         bool
 	StopNever         bool
+	SaveFile          bool
+	Quiet             bool
 }
 
 func (rf *RootFlag) verify() error {
@@ -60,7 +62,6 @@ var rootCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-
 		return binLog.Run()
 	},
 }
@@ -84,6 +85,8 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&rootFlag._StopDateTimeStr, "stop-datetime", "", "截止解析时间(可选) 格式:%Y-%m-%d %H:%M:%S ex: 2022-08-13 16:00:00")
 	rootCmd.PersistentFlags().BoolVarP(&rootFlag.Flashback, "flashback", "", false, "生成回滚语句")
 	rootCmd.PersistentFlags().BoolVarP(&rootFlag.StopNever, "stop-never", "", false, "是否一直保持解析")
+	rootCmd.PersistentFlags().BoolVarP(&rootFlag.SaveFile, "save", "", false, "是否写入sql到文件中")
+	rootCmd.PersistentFlags().BoolVarP(&rootFlag.Quiet, "q", "", false, "安静模式,不输出到控制台")
 }
 
 func Execute() {
