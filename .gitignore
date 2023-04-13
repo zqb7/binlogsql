@@ -3,3 +3,4 @@
 .vscode
 *.sql
 binlogsql
+!cmd/binlogsql
