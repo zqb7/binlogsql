@@ -1,4 +1,4 @@
-package cmd
+package binlogsql
 
 import (
 	"context"
@@ -14,6 +14,49 @@ import (
 	"github.com/go-mysql-org/go-mysql/mysql"
 	"github.com/go-mysql-org/go-mysql/replication"
 )
+
+type RootFlag struct {
+	Host       string
+	Port       uint16
+	User       string
+	Password   string
+	DbName     string
+	OnlyTables []string
+
+	StartFile     string
+	StartPosition uint32
+	EndFile       string
+	EndPosition   int
+
+	StartDateTimeStr string
+	StopDateTimeStr  string
+	StartDateTime    time.Time
+	StopDateTime     time.Time
+	Flashback        bool
+	StopNever        bool
+	SaveFile         bool
+	Quiet            bool
+}
+
+func (rf *RootFlag) Verify() error {
+	if rf.StartDateTimeStr != "" {
+		t, err := time.ParseInLocation("2006-01-02 15:04:05", rf.StartDateTimeStr, time.Local)
+		if err != nil {
+			return err
+		}
+		rf.StartDateTime = t
+	}
+
+	if rf.StopDateTimeStr != "" {
+		t, err := time.ParseInLocation("2006-01-02 15:04:05", rf.StopDateTimeStr, time.Local)
+		if err != nil {
+			return err
+		}
+		rf.StopDateTime = t
+	}
+
+	return nil
+}
 
 func NewBinLog(conf *RootFlag) (*BinLog, error) {
 	conn, err := client.Connect(fmt.Sprintf("%s:%d", conf.Host, conf.Port), conf.User, conf.Password, "")
